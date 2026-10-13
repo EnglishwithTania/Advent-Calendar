@@ -559,3 +559,37 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--lamp); outl
   .fin-1 { display: none; }
   .fin-sky .santa { animation: none; transform: translate(140px, 46px); }
 }
+
+/* фейерверк из окна дома: яркие искры с сиянием (работает и при «уменьшить движение») */
+.fw-spark { transform-box: fill-box; transform-origin: center; opacity: 0; animation: fw-burst 1.8s cubic-bezier(.12, .75, .3, 1) forwards; }
+@keyframes fw-burst {
+  0%   { transform: translate(0, 0) scale(1.6); opacity: 1; }
+  50%  { transform: translate(var(--dx), var(--dy)) scale(1); opacity: 1; }
+  62%  { opacity: 0.45; }
+  72%  { opacity: 1; }
+  100% { transform: translate(calc(var(--dx) * 1.12), calc(var(--dy) + 26px)) scale(0.2); opacity: 0; }
+}
+.fw-flash { transform-box: fill-box; transform-origin: center; animation: fw-flash 0.55s ease-out forwards; }
+@keyframes fw-flash { from { transform: scale(0.3); opacity: 1; } to { transform: scale(3.2); opacity: 0; } }
+.fw-rocket { animation: fw-rocket 0.85s cubic-bezier(.25, .6, .5, 1) forwards; }
+@keyframes fw-rocket { from { transform: translate(0, 0); } to { transform: translate(var(--dx), var(--dy)); } }
+.fw-light { animation: fw-light 5.7s ease-in-out 1 both; }
+@keyframes fw-light { 0%, 100% { opacity: 0; } 6%, 90% { opacity: 1; } }
+.fw-pop { animation: fw-pop 0.5s cubic-bezier(.2, 1.5, .4, 1) 1 both; }
+.fw-pop.fw-drop { animation: fw-drop 0.45s ease-in 1 both; }
+@keyframes fw-pop { from { transform: translateY(18px); } to { transform: translateY(0); } }
+@keyframes fw-drop { from { transform: translateY(0); } to { transform: translateY(18px); } }
+
+/* снежный бой двух эльфов внизу: снежки летят по дуге туда-сюда, без остановки */
+.sb-elf { transform-box: fill-box; transform-origin: 50% 100%; }
+.sb-a { animation: sb-throw-a 3s ease-in-out infinite; }
+.sb-b { animation: sb-throw-b 3s ease-in-out infinite; animation-delay: -1.5s; }
+@keyframes sb-throw-a { 0% { transform: rotate(-9deg); } 6% { transform: rotate(10deg); } 14%, 88% { transform: rotate(0deg); } 97% { transform: rotate(-8deg); } 100% { transform: rotate(-9deg); } }
+@keyframes sb-throw-b { 0% { transform: rotate(9deg); } 6% { transform: rotate(-10deg); } 14%, 88% { transform: rotate(0deg); } 97% { transform: rotate(8deg); } 100% { transform: rotate(9deg); } }
+.sb-x { opacity: 0; animation: sb-x 3s linear infinite; }
+.sb-y { transform-box: fill-box; animation: sb-y 3s infinite; }
+.sb-x.sb-ba, .sb-y.sb-ba, .sb-hit.sb-ba { animation-delay: -1.5s; }
+@keyframes sb-x { 0% { transform: translateX(0); opacity: 1; } 46% { transform: translateX(var(--d)); opacity: 1; } 47%, 100% { transform: translateX(var(--d)); opacity: 0; } }
+@keyframes sb-y { 0% { transform: translateY(0); animation-timing-function: ease-out; } 23% { transform: translateY(-26px); animation-timing-function: ease-in; } 46%, 100% { transform: translateY(0); } }
+.sb-hit { transform-box: fill-box; transform-origin: center; opacity: 0; animation: sb-hit 3s ease-out infinite; }
+@keyframes sb-hit { 0%, 46% { opacity: 0; transform: scale(0.3); } 48% { opacity: 1; transform: scale(0.6); } 62%, 100% { opacity: 0; transform: scale(1.7); } }

@@ -323,6 +323,32 @@
     return tree(lay.treeX, f1(roadY(MAIN_TREE.leg, lay.treeX) - 7 * leg.s), MAIN_TREE.h, 'shiny', 'disco');
   }
 
+  // Снежный бой внизу: красный и зелёный эльфы без конца кидают друг в друга снежки (чисто CSS-анимация)
+  function snowFight() {
+    const xa = 234, xb = 328, y = 557, d = xb - xa - 20;
+    const strip = (svg, cls) => svg.replace(/class="fun fun-elf" data-fun="elf" data-trick="[a-z]+"/, 'class="sb-elf ' + cls + '"');
+    const ball = (x0, dir, cls) =>
+      '<g class="sb-x ' + cls + '" style="--d:' + dir * d + 'px"><g class="sb-y ' + cls + '"><circle cx="' + x0 + '" cy="' + (y - 17) + '" r="2.6" fill="#fff" stroke="#c9d3e6" stroke-width="0.6"/></g></g>';
+    const hit = (x, cls) => '<g class="sb-hit ' + cls + '"><circle cx="' + x + '" cy="' + (y - 16) + '" r="6" fill="#fff" opacity="0.85"/>' +
+      [0, 1, 2, 3, 4].map((i) => '<circle cx="' + f1(x + Math.cos(i * 1.26) * 7) + '" cy="' + f1(y - 16 + Math.sin(i * 1.26) * 7) + '" r="1.5" fill="#fff"/>').join('') + '</g>';
+    return strip(elf(xa, y, 0.92, { hat: '#c8343c' }), 'sb-a') +
+      strip(elf(xb, y, 0.92, { flip: true, hat: '#3f8a63' }), 'sb-b') +
+      ball(xa + 12, 1, 'sb-ab') + ball(xb - 12, -1, 'sb-ba') + hit(xb - 10, 'sb-ab') + hit(xa + 10, 'sb-ba');
+  }
+
+  // Подарки стоят у входа в дом i (индекс с нуля), поверх домика
+  function giftsAtHouse(i) {
+    const p = housePos(i), hw = halfW(i);
+    const x = f1(p.x - hw * 0.5), y = f1(p.y + 6);
+    return gift(x - 6, y, 12, 10, '#b8323a') + gift(x + 7, y, 9, 8, '#3f8a63', '#f2c970') + gift(x, y - 9, 8, 7, '#e0a93f', '#b8323a');
+  }
+
+  // Снеговик стоит на снегу справа от дома i (индекс с нуля)
+  function snowmanAtHouse(i) {
+    const p = housePos(i);
+    return snowman(f1(p.x + halfW(i) + 13), f1(p.y + 5), 0.6);
+  }
+
   function roadElf(i, o) {
     const a = housePos(i), b = housePos(i + 1);
     const dir = b.x > a.x ? 1 : -1;
@@ -394,26 +420,22 @@
         roadElf(3, { wave: true, trick: 'talk' }) +
         roadElf(7, { flip: true, gift: '#c8343c', ribbon: '#f2c970', trick: 'sneeze' }) +
         roadElf(10, { gift: '#3e5f94', trick: 'slip', hat: '#3f8a63' }) +
-        roadElf(18, { wave: true, flip: true, trick: 'flip', hat: '#e0a93f' }) +
 
-        // передний план: подарки, сани, помощники, ёлки, снеговик
-        gift(12, 557, 12, 10, '#b8323a') + gift(25, 557, 9, 8, '#3f8a63', '#f2c970') + gift(18, 546, 8, 7, '#e0a93f', '#b8323a') +
+        // передний план: сани, помощники, ёлки, снежный бой двух эльфов
         '<path d="M60 542 L78 546" stroke="#7a4a2a" stroke-width="1"/>' +
         elf(54, 557, 0.92, { flip: true, pull: true, trick: 'dance' }) +
         sled(100, 557) +
         elf(140, 557, 0.92, { flip: true, pull: true, trick: 'talk', hat: '#3e5f94' }) +
-        tree(164, 560, 30) +
         tree(198, 560, 32) +
         gift(184, 559, 8, 7, '#b8323a') + gift(212, 559, 9, 8, '#3f8a63', '#f2c970') + gift(203, 560, 6, 5, '#3e5f94') +
-        elf(234, 557, 0.92, { gift: '#3e5f94', ribbon: '#f2c970', trick: 'toss' }) +
-        snowman(268, 558, 0.88) +
+        snowFight() +
         tree(298, 560, 32) +
-        elf(328, 557, 0.92, { flip: true, trick: 'snowball', hat: '#3f8a63' }) +
         tree(352, 562, 26) +
       '</g>' +
 
       // эльфы на крышах и на санках рисуются поверх домиков
       '<g id="houses"></g>' +
+      '<g id="props">' + giftsAtHouse(10) + snowmanAtHouse(5) + '</g>' +
       '<g aria-hidden="true">' + roofElves() + sledElf() + '</g>' +
       '<g id="fx" pointer-events="none"></g>';
   }
@@ -1080,6 +1102,63 @@
     });
   }
 
+  /* ---------- эльф в окне дома 17: раз в 90 секунд высовывается и запускает фейерверк ---------- */
+
+  const FIREWORK_EVERY = 90000, FIREWORK_HOUSE = 19;   // индекс дома (день 20) на улице 16–20
+  const FW_COLORS = [['#ff4d6d', '#ffd166'], ['#6fd3ff', '#f3f6ff'], ['#8ef0a8', '#f2c970'], ['#c77dff', '#ffd6e6'], ['#ffb347', '#ff6b9d']];
+
+  // Один залп: яркая вспышка, кольцо искр с сиянием, внутреннее кольцо и золотые блёстки
+  function fwBurst(fx, x, y, cols) {
+    let glow = '', core = '';
+    const ring = (n, dmin, dspan, r, pick, delay) => {
+      for (let i = 0; i < n; i++) {
+        const a = (i / n) * Math.PI * 2 + rnd() * 0.25, d = dmin + rnd() * dspan;
+        const st = 'cx="' + f1(x) + '" cy="' + f1(y) + '" style="--dx:' + f1(Math.cos(a) * d) + 'px;--dy:' + f1(Math.sin(a) * d) + 'px;animation-delay:' + (delay + rnd() * 0.08).toFixed(2) + 's"';
+        const col = pick(i);
+        glow += '<circle class="fw-spark" ' + st + ' r="' + f1(r * 2.4) + '" fill="' + col + '"/>';
+        core += '<circle class="fw-spark" ' + st + ' r="' + r + '" fill="' + col + '"/>';
+      }
+    };
+    ring(28, 28, 16, 1.5, (i) => cols[i % 2], 0);
+    ring(16, 10, 10, 1.1, () => '#fffdf0', 0.05);
+    const g = addSVG(fx,
+      '<circle class="fw-flash" cx="' + f1(x) + '" cy="' + f1(y) + '" r="9" fill="#fffdf0" filter="url(#soft)"/>' +
+      '<g filter="url(#soft)" opacity="0.85">' + glow + '</g>' + core);
+    sparkles(fx, x, y, 12, '✦');
+    later(2300, () => g.remove());
+  }
+
+  // Ракета летит из окна вверх и в конце взрывается
+  function fwRocket(fx, x0, y0, x1, y1, cols, delay) {
+    later(delay, () => {
+      const dx = x1 - x0, dy = y1 - y0, len = Math.hypot(dx, dy);
+      const g = addSVG(fx, '<g class="fw-rocket" style="--dx:' + f1(dx) + 'px;--dy:' + f1(dy) + 'px">' +
+        '<path d="M0 0 L' + f1(-dx / len * 18) + ' ' + f1(-dy / len * 18) + '" stroke="#ffe9a8" stroke-width="1.6" stroke-linecap="round" filter="url(#soft)"/>' +
+        '<circle r="2" fill="#fffdf0"/></g>', 'fw-launch');
+      later(850, () => { g.remove(); fwBurst(fx, x1, y1, cols); });
+    });
+  }
+
+  function fireworkShow(box, fx) {
+    if (box.dataset.fw) return;
+    box.dataset.fw = '1';
+    const p = housePos(FIREWORK_HOUSE), s = p.s;
+    // верхнее правое окно городского дома: x 5…12, y −30…−22 (в координатах дома)
+    const wl = p.x + 5 * s, wr = p.x + 12 * s, wt = p.y - 30 * s, wb = p.y - 22 * s, cx = (wl + wr) / 2;
+    const elfSvg = elf(cx, wb + 3, 0.52, { wave: true, hat: '#e0a93f' }).replace('class="fun fun-elf" data-fun="elf" data-trick="toss"', 'class="fw-elf"');
+    const g = addSVG(fx,
+      '<clipPath id="fw-clip"><rect x="' + f1(wl - 1) + '" y="' + f1(wt - 20) + '" width="' + f1(wr - wl + 2) + '" height="' + f1(wb - wt + 20) + '"/></clipPath>' +
+      '<rect class="fw-light" x="' + f1(wl) + '" y="' + f1(wt) + '" width="' + f1(wr - wl) + '" height="' + f1(wb - wt) + '" rx="1" fill="#ffd98a"/>' +
+      '<g clip-path="url(#fw-clip)"><g class="fw-pop">' + elfSvg + '</g></g>');
+    const top = wt - 4;
+    const shots = [[64, 84, 0], [168, 62, 650], [252, 98, 1300], [112, 70, 2000], [300, 80, 2400]];
+    shots.forEach(([tx, ty, d], i) => fwRocket(fx, cx, top, tx, ty, FW_COLORS[i % FW_COLORS.length], 700 + d));
+    later(900, () => bubble(fx, cx, wt - 24, 'Cheers!', 1600));
+    later(3200, () => bubble(fx, cx, wt - 24, 'Happy Christmas!', 1800));
+    later(5200, () => g.querySelector('.fw-pop').classList.add('fw-drop'));
+    later(5700, () => { g.remove(); delete box.dataset.fw; });
+  }
+
   let ambient = [];
   function startAmbient(box, fx, onFun) {
     ambient.forEach(clearInterval);
@@ -1093,7 +1172,9 @@
         lastElf = elves[Math.floor(Math.random() * elves.length)];
         FUN.elf(lastElf, fx, say);
       }, ELF_EVERY),
-      setInterval(() => { if (!document.hidden) grinchHeist(box, fx); }, GRINCH_EVERY)
+      setInterval(() => { if (!document.hidden) grinchHeist(box, fx); }, GRINCH_EVERY),
+      setInterval(() => { if (!document.hidden) fireworkShow(box, fx); }, FIREWORK_EVERY),
+      setTimeout(() => { if (!document.hidden) fireworkShow(box, fx); }, 15000)   // первый раз через 15 секунд после запуска
     ];
   }
 
