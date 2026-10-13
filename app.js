@@ -167,7 +167,6 @@
   function setupMap() {
     houses = window.Scene.mount($('#map'), (kind, text) => {
       if (kind === 'say') { speak(text, 0.95, 1.5); return; }   // эльфы говорят высоким голосом
-      if (kind === 'santa') speak('Ho ho ho!', 0.8, 0.5);
       haptic(kind === 'santa' ? 'ok' : undefined);
     });
     houses.addEventListener('click', (e) => {

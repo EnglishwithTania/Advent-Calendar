@@ -20,7 +20,7 @@
   const LEGS = [
     { xl: 6, xr: 354, yl: 514, yr: 502, s: 1.26 },
     { xl: 6, xr: 354, yl: 412, yr: 424, s: 1.24 },
-    { xl: 6, xr: 354, yl: 334, yr: 322, s: 1.22 },
+    { xl: 6, xr: 354, yl: 334, yr: 322, s: 1.02 },
     { xl: 6, xr: 354, yl: 234, yr: 244, s: 1.2 },
     { xl: 6, xr: 354, yl: 156, yr: 146, s: 1.17 }
   ];
@@ -43,9 +43,37 @@
 
   /* ---------- где стоит домик ---------- */
 
+  // Главная ёлка стоит в центре города, на среднем витке между домами. Она выше домов,
+  // но не достаёт до улицы сверху. Дома этого витка раздвинуты, чтобы ей хватило места.
+  const MAIN_TREE = { leg: 2, after: 3, h: 68, hw: 30 };   // after — сколько домов слева от ёлки
+
+  let mainLayout = null;
+  function layoutMainStreet() {
+    if (mainLayout) return mainLayout;
+    const s = LEGS[MAIN_TREE.leg].s, first = MAIN_TREE.leg * 5;
+    const hw = [0, 1, 2, 3, 4].map((k) => BUILDERS[BUILDINGS[(first + k) % BUILDINGS.length].type](DUMMY).w / 2 * s);
+    const items = hw.map((v) => v * 2);
+    items.splice(MAIN_TREE.after, 0, MAIN_TREE.hw * 2 + 6);
+    const gap = ((HOUSE_X[1] - HOUSE_X[0]) - items.reduce((a, b) => a + b, 0)) / (items.length - 1);
+    let x = HOUSE_X[0];
+    const xs = [];
+    items.forEach((w, j) => {
+      if (j === MAIN_TREE.after) mainLayout = { treeX: f1(x + w / 2) };
+      else xs.push(f1(x + w / 2));
+      x += w + gap;
+    });
+    mainLayout.xs = xs;
+    mainLayout.gap = gap;
+    return mainLayout;
+  }
+
   function housePos(i) {
     const li = Math.min(Math.floor(i / 5), LEGS.length - 1);
     const leg = LEGS[li];
+    if (li === MAIN_TREE.leg) {
+      const x = layoutMainStreet().xs[i % 5];
+      return { x, y: f1(roadY(li, x) - 7 * leg.s), s: leg.s };
+    }
     let f = ((i % 5) + 0.5) / 5;
     if (li % 2) f = 1 - f;   // нечётные витки идут справа налево
     const x = HOUSE_X[0] + f * (HOUSE_X[1] - HOUSE_X[0]);
@@ -192,7 +220,7 @@
   }
 
   function deer(x, y, body, rudolph) {
-    let g = '<g transform="translate(' + x + ' ' + y + ')">';
+    let g = '<g transform="translate(' + x + ' ' + y + ')"><g class="gallop" style="animation-delay:-' + f1((x % 7) / 10) + 's">';
     g += '<path d="M-10 3 L-19 8 M-7 4 L-14 11 M8 4 L16 10 M10 3 L19 6" stroke="' + body + '" stroke-width="2.4" stroke-linecap="round"/>';
     g += '<ellipse cx="0" cy="0" rx="13" ry="6" fill="' + body + '"/>';
     g += '<path d="M-12 -2 L-17 -5 L-15 0 Z" fill="#efe4d0"/>';
@@ -208,13 +236,16 @@
     } else {
       g += '<circle cx="24.2" cy="-12.6" r="1.4" fill="#2a1a12"/>';
     }
-    return g + '</g>';
+    return g + '</g></g>';
   }
 
   // Санта в санях с мешком подарков и оленями, впереди Рудольф с красным носом.
   function santa() {
     return '<g class="santa fun" data-fun="santa"><g class="bob"><g transform="scale(0.55) rotate(-5)">' +
       '<rect x="-20" y="-60" width="230" height="100" fill="transparent"/>' +
+      '<path class="wind" d="M-34 -4 H-14" stroke="#dfe7f4" stroke-width="1.6" stroke-linecap="round"/>' +
+      '<path class="wind w2" d="M-40 10 H-12" stroke="#dfe7f4" stroke-width="1.6" stroke-linecap="round"/>' +
+      '<path class="wind w3" d="M-30 24 H-12" stroke="#dfe7f4" stroke-width="1.6" stroke-linecap="round"/>' +
       '<path d="M55 -8 L88 -4 L94 -14 M88 -4 L126 -7 L132 -16 M126 -7 L165 -6" stroke="#e0a93f" stroke-width="0.9" fill="none"/>' +
       deer(96, -13, '#76533e') + deer(134, -15, '#76533e') +
       deer(90, -2, '#94664a') + deer(128, -4, '#94664a') + deer(167, -6, '#a06e4c', true) +
@@ -265,6 +296,11 @@
     }).join('');
   }
 
+  function mainTree() {
+    const lay = layoutMainStreet(), leg = LEGS[MAIN_TREE.leg];
+    return tree(lay.treeX, f1(roadY(MAIN_TREE.leg, lay.treeX) - 7 * leg.s), MAIN_TREE.h, true, 'disco');
+  }
+
   function roadElf(i, o) {
     const a = housePos(i), b = housePos(i + 1);
     const dir = b.x > a.x ? 1 : -1;
@@ -277,10 +313,10 @@
   function sceneSVG() {
     const moon = { x: 302, y: 34 };
     let stars = '';
-    for (let i = 0; i < 90; i++) {
-      const x = -200 + rnd() * 760, y = -320 + rnd() * 380, r = 0.4 + rnd() * 1.1;
+    for (let i = 0; i < 240; i++) {
+      const x = -200 + rnd() * 760, y = i % 2 ? -320 + rnd() * 380 : -30 + rnd() * 120, r = 0.4 + rnd() * 1.1;
       if (Math.hypot(x - moon.x, y - moon.y) < 46) continue;
-      stars += '<circle' + (i % 5 === 0 ? ' class="twinkle" style="animation-delay:-' + f1(rnd() * 4) + 's"' : '') +
+      stars += '<circle class="star" style="animation-delay:-' + f1(rnd() * 5) + 's;animation-duration:' + f1(1.6 + rnd() * 2.4) + 's"' +
         ' cx="' + f1(x) + '" cy="' + f1(y) + '" r="' + f1(r) + '"/>';
     }
 
@@ -329,6 +365,9 @@
         // ёлки на снегу под нижним витком дороги
         tree(128, 540, 18) + tree(340, 540, 18) +
 
+        // главная ёлка в центре города, между домами
+        mainTree() +
+
         // помощники Санты на дороге, в просветах между узкими зданиями. У каждого свой трюк.
         roadElf(3, { wave: true, trick: 'talk' }) +
         roadElf(7, { flip: true, gift: '#c8343c', ribbon: '#f2c970', trick: 'sneeze' }) +
@@ -342,7 +381,7 @@
         sled(100, 557) +
         elf(140, 557, 0.92, { flip: true, pull: true, trick: 'talk', hat: '#3e5f94' }) +
         tree(164, 560, 30) +
-        tree(198, 560, 42, true, 'disco') +
+        tree(198, 560, 32) +
         gift(184, 559, 8, 7, '#b8323a') + gift(212, 559, 9, 8, '#3f8a63', '#f2c970') + gift(203, 560, 6, 5, '#3e5f94') +
         elf(234, 557, 0.92, { gift: '#3e5f94', ribbon: '#f2c970', trick: 'toss' }) +
         snowman(268, 558, 0.88) +
@@ -940,9 +979,9 @@
   const FUN = {
     // Санта проносится через всё небо и кричит HO HO HO!
     santa(el) {
-      if (el.classList.contains('dash')) return false;
+      if (el.classList.contains('dash') || el.classList.contains('back')) return false;
       const ho = addSVG(el.querySelector('.bob > g'), '<text x="30" y="-58">HO HO HO!</text>', 'ho');
-      play(el, 'dash', 3200, () => ho.remove());
+      play(el, 'dash', 4000, () => { ho.remove(); play(el, 'back', 1400); });
     },
     elf(el, fx, say) { return busy(el, ELF[el.dataset.trick] || ELF.toss, fx, say); },
     tree(el, fx, say) { return busy(el, TREE[el.dataset.trick] || TREE.shake, fx, say); },
@@ -965,6 +1004,77 @@
     setTimeout(() => { delete el.dataset.busy; }, ms);
   }
 
+  /* ---------- сами собой: эльфы шалят каждые 12 секунд, Гринч приходит каждые 60 ---------- */
+
+  const ELF_EVERY = 12000, GRINCH_EVERY = 60000;
+
+  function grinchSVG() {
+    return '<g class="grinch-body">' +
+      '<rect x="-5" y="-9" width="4" height="9" fill="#4f8a3a"/><rect x="1" y="-9" width="4" height="9" fill="#4f8a3a"/>' +
+      '<path d="M-7 -8 Q-9 -22 0 -24 Q9 -22 7 -8 Z" fill="#6aa84f"/>' +
+      '<path d="M-6 -12 Q0 -8 6 -12 L7 -8 L-7 -8 Z" fill="#c8343c"/>' +
+      '<circle cx="0" cy="-30" r="6.5" fill="#6aa84f"/>' +
+      '<path d="M-3.6 -31.5 l2.6 1 M3.6 -31.5 l-2.6 1" stroke="#1a2440" stroke-width="1" stroke-linecap="round"/>' +
+      '<circle cx="-2.2" cy="-30.6" r="0.9" fill="#f2c970"/><circle cx="2.2" cy="-30.6" r="0.9" fill="#f2c970"/>' +
+      '<path d="M-3.5 -27 Q0 -24.5 3.5 -27" stroke="#1a2440" stroke-width="1" fill="none" stroke-linecap="round"/>' +
+      '<path d="M-6.4 -33 Q0 -45 7 -34 Z" fill="#c8343c"/><rect x="-6.6" y="-34.6" width="13.8" height="2.4" rx="1.2" fill="#fffdf6"/><circle cx="6" cy="-41" r="2" fill="#fffdf6"/>' +
+      '</g>';
+  }
+
+  // Гринч выбегает слева, хватает главную ёлку (ту, что с дискотекой), уносит вправо; потом ёлка вырастает заново
+  function grinchHeist(box, fx) {
+    const tree = box.querySelector('.fun-tree[data-trick="disco"]');
+    if (!tree || tree.dataset.busy || tree.dataset.stolen) return;
+    tree.dataset.busy = '1';
+    tree.dataset.stolen = '1';
+    const b = tree.getBBox(), tx = b.x + b.width / 2, ty = b.y + b.height;
+    const roadAt = (x) => roadY(MAIN_TREE.leg, x) + 3;
+    const g = addSVG(fx, '', 'grinch');
+    const body = addSVG(g, grinchSVG());
+    const place = (x, bob) => g.setAttribute('transform', 'translate(' + f1(x) + ' ' + f1(roadAt(x) - Math.abs(Math.sin(bob)) * 3) + ')');
+    const x0 = -34, x1 = tx - 22, x2 = W + 40;
+    place(x0, 0);
+    tween(2400, (t) => place(x0 + (x1 - x0) * t, t * 18), () => {
+      bubble(fx, x1, roadAt(x1) - 46, 'I’ll take that!', 1600);
+      later(500, () => {
+        tree.style.opacity = '0';
+        const clone = tree.cloneNode(true);
+        clone.removeAttribute('class');
+        clone.removeAttribute('style');
+        addSVG(body, '<g transform="translate(16 0) scale(0.55) translate(' + f1(-tx) + ' ' + f1(-ty) + ')"></g>').firstChild.appendChild(clone);
+        tween(2800, (t) => place(x1 + (x2 - x1) * t, t * 20), () => {
+          g.remove();
+          later(5000, () => {
+            tree.style.opacity = '';
+            delete tree.dataset.stolen;
+            delete tree.dataset.busy;
+            play(tree, 'boing', 1100);
+            sparkles(fx, tx, ty - 20, 8, '✦');
+            bubble(fx, tx, b.y - 4, 'Back again!', 1800);
+          });
+        });
+        later(300, () => bubble(fx, x1 + 40, roadAt(x1) - 46, 'Bah, humbug!', 1500));
+      });
+    });
+  }
+
+  let ambient = [];
+  function startAmbient(box, fx, onFun) {
+    ambient.forEach(clearInterval);
+    const say = () => {};   // сами собой эльфы только показывают облачко, вслух не говорят
+    let lastElf = null;
+    ambient = [
+      setInterval(() => {
+        if (document.hidden) return;
+        const elves = Array.from(box.querySelectorAll('.fun-elf')).filter((e) => e !== lastElf && !e.dataset.busy);
+        if (!elves.length) return;
+        lastElf = elves[Math.floor(Math.random() * elves.length)];
+        FUN.elf(lastElf, fx, say);
+      }, ELF_EVERY),
+      setInterval(() => { if (!document.hidden) grinchHeist(box, fx); }, GRINCH_EVERY)
+    ];
+  }
+
   /* ---------- подключение ---------- */
 
   // onFun(kind, text) вызывается, когда сработала приколюха: app.js добавляет звук и вибрацию.
@@ -979,6 +1089,7 @@
       const say = (text) => onFun && onFun('say', text);
       if (FUN[kind](el, fx, say) !== false && onFun) onFun(kind);
     });
+    startAmbient(box, fx, onFun);
     return box.querySelector('#houses');
   }
 
