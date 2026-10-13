@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Британский декабрь</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;700&family=Gloock&display=swap">
+<link rel="stylesheet" href="style.css?v=5">
+<!-- Скрипт Telegram: даёт странице доступ к Telegram (хранилище, цвета, вибрация) -->
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+<div class="snow" id="snow" aria-hidden="true"></div>
+
+<main class="app">
+  <header class="head">
+    <p class="head-sub" id="subtitle"></p>
+    <h1 class="head-title" id="title"></h1>
+    <p class="head-progress" id="progress"></p>
+    <div class="head-actions">
+      <button type="button" class="head-btn" id="btn-finale" aria-label="Посмотреть финальный ролик" hidden>🎬</button>
+      <button type="button" class="head-btn" id="btn-gift" aria-label="Открыть подарок Boxing Day" hidden>🎁</button>
+    </div>
+  </header>
+
+  <p class="banner" id="banner" hidden></p>
+
+  <section id="view-calendar" aria-label="Календарь">
+    <div class="map" id="map"></div>
+  </section>
+
+  <section id="view-review" aria-label="Повторение" hidden>
+    <div id="review"></div>
+  </section>
+
+  <div class="debug" id="debug" hidden>
+    <label for="debug-date">Тестовая дата</label>
+    <input type="date" id="debug-date">
+    <button type="button" id="debug-reset">Сбросить прогресс</button>
+    <button type="button" id="debug-all">Открыть все окошки</button>
+    <button type="button" id="debug-finale">Показать ролик</button>
+    <button type="button" id="debug-gift">Показать подарок</button>
+  </div>
+</main>
+
+<nav class="tabs" aria-label="Разделы">
+  <button type="button" class="tab is-active" id="tab-calendar" data-view="calendar">Календарь</button>
+  <button type="button" class="tab" id="tab-review" data-view="review">Повторить <span class="badge" id="due-badge" hidden>0</span></button>
+</nav>
+
+<div class="backdrop" id="backdrop" hidden>
+  <article class="sheet" id="sheet" role="dialog" aria-modal="true" aria-labelledby="s-phrase">
+    <button type="button" class="sheet-close" id="sheet-close" aria-label="Закрыть">×</button>
+    <div id="sheet-body"></div>
+  </article>
+</div>
+
+<div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-label="Сюрприз" hidden>
+  <button type="button" class="overlay-close" id="overlay-close" aria-label="Закрыть">×</button>
+  <div class="overlay-body" id="overlay-body"></div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+<script src="content.js?v=5"></script>
+<script src="scene.js?v=5"></script>
+<script src="icons.js?v=5"></script>
+<script src="app.js?v=5"></script>
+</body>
+</html>
