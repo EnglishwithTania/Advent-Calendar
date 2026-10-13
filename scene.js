@@ -126,7 +126,7 @@
 
   // У каждой ёлки свой трюк. Если трюк не указан, он выбирается по очереди из этого списка.
   const TREE_TRICKS = ['shake', 'robin', 'lights', 'owl', 'grow', 'presents', 'peek', 'shake'];
-  let treeCount = 0;
+  let treeCount = 0, bigTreeN = 0;
 
   function tree(x, y, h, lights, trick) {
     const layers = [[0, 0.42, 0.24], [0.22, 0.68, 0.33], [0.44, 0.9, 0.42]];
@@ -138,10 +138,32 @@
       s += '<path d="M' + f1(x - hw) + ' ' + f1(bot) + ' Q' + f1(x - hw / 2) + ' ' + f1(bot - 3) + ' ' + f1(x) + ' ' + f1(bot) + ' Q' + f1(x + hw / 2) + ' ' + f1(bot - 3) + ' ' + f1(x + hw) + ' ' + f1(bot) + '" class="tsnow" stroke="#dfe8f5" stroke-width="' + f1(Math.max(1.4, h * 0.05)) + '" fill="none" stroke-linecap="round"/>';
     });
     s += '<path d="M' + f1(x) + ' ' + f1(y - h) + ' L' + f1(x - h * 0.1) + ' ' + f1(y - h * 0.82) + ' Q' + f1(x) + ' ' + f1(y - h * 0.86) + ' ' + f1(x + h * 0.1) + ' ' + f1(y - h * 0.82) + ' Z" class="tsnow" fill="#e8eff9"/>';
+    // большие ёлки наряжены: гирлянда-бусы и шарики; у каждой второй ещё и мигают огоньки
+    const big = h >= 34;
+    const n = big ? bigTreeN++ : 0;
+    if (lights === undefined && big) lights = n % 2 === 0;   // 'shiny' — блестящие огоньки
+    if (big) {
+      [[0.5, 0.3], [0.7, 0.4], [0.9, 0.5]].forEach(([fy, fw]) => {
+        const y0 = y - h + fy * h;
+        s += '<path d="M' + f1(x - fw * h * 0.8) + ' ' + f1(y0 - h * 0.02) + ' Q' + f1(x) + ' ' + f1(y0 + h * 0.1) + ' ' + f1(x + fw * h * 0.8) + ' ' + f1(y0 - h * 0.02) + '" stroke="#f2c970" stroke-width="' + f1(Math.max(0.9, h * 0.022)) + '" stroke-dasharray="' + f1(h * 0.03) + ' ' + f1(h * 0.025) + '" stroke-linecap="round" fill="none"/>';
+      });
+      const balls = ['#c8343c', '#e0a93f', '#3e7bd0', '#c8343c', '#e0a93f', '#3e7bd0', '#c8343c'];
+      [[0.36, 0.05], [0.52, -0.14], [0.56, 0.16], [0.74, -0.22], [0.76, 0.06], [0.88, 0.27], [0.9, -0.08]].forEach(([fy, fx], i) => {
+        s += '<circle cx="' + f1(x + fx * h) + '" cy="' + f1(y - h + fy * h) + '" r="' + f1(Math.max(1.3, h * 0.032)) + '" fill="' + balls[i] + '"/>' +
+          '<circle cx="' + f1(x + fx * h - h * 0.01) + '" cy="' + f1(y - h + fy * h - h * 0.01) + '" r="' + f1(Math.max(0.4, h * 0.009)) + '" fill="#fff" opacity="0.7"/>';
+      });
+    }
     if (lights) {
       const cols = ['#ff5a5a', '#f2c970', '#6fd3ff', '#8ef0a8'];
-      [[0.3, -0.12], [0.36, 0.1], [0.55, -0.2], [0.6, 0.16], [0.63, 0], [0.8, -0.28], [0.84, 0.24], [0.78, 0.04]].forEach(([fy, fx], i) => {
-        s += '<circle class="bulb b' + (i % 2) + '" cx="' + f1(x + fx * h) + '" cy="' + f1(y - h + fy * h) + '" r="' + f1(h * 0.035) + '" fill="' + cols[i % 4] + '"/>';
+      [[0.3, -0.12], [0.36, 0.1], [0.55, -0.2], [0.6, 0.16], [0.63, 0], [0.8, -0.28], [0.84, 0.24], [0.78, 0.04], [0.46, 0.2], [0.7, -0.1]].forEach(([fy, fx], i) => {
+        const bx = f1(x + fx * h), by = f1(y - h + fy * h), br = f1(Math.max(1.1, h * 0.04));
+        if (lights === 'shiny') {
+          // блестящий огонёк: мягкое сияние и четырёхконечная искорка
+          const k = f1(br * 3.2);
+          s += '<circle class="tl-glow t' + (i % 3) + '" cx="' + bx + '" cy="' + by + '" r="' + f1(br * 2.6) + '" fill="' + cols[i % 4] + '" filter="url(#soft)"/>' +
+            '<path class="tl-spark t' + (i % 3) + '" d="M' + bx + ' ' + f1(by - k) + ' Q' + bx + ' ' + by + ' ' + f1(+bx + k) + ' ' + by + ' Q' + bx + ' ' + by + ' ' + bx + ' ' + f1(+by + k) + ' Q' + bx + ' ' + by + ' ' + f1(bx - k) + ' ' + by + ' Q' + bx + ' ' + by + ' ' + bx + ' ' + f1(by - k) + ' Z" fill="#fffbe6"/>';
+        }
+        s += '<circle class="tl t' + (i % 3) + '" cx="' + bx + '" cy="' + by + '" r="' + br + '" fill="' + cols[i % 4] + '"/>';
       });
       s += star(x, y - h - 2, h * 0.09);
     }
@@ -298,7 +320,7 @@
 
   function mainTree() {
     const lay = layoutMainStreet(), leg = LEGS[MAIN_TREE.leg];
-    return tree(lay.treeX, f1(roadY(MAIN_TREE.leg, lay.treeX) - 7 * leg.s), MAIN_TREE.h, true, 'disco');
+    return tree(lay.treeX, f1(roadY(MAIN_TREE.leg, lay.treeX) - 7 * leg.s), MAIN_TREE.h, 'shiny', 'disco');
   }
 
   function roadElf(i, o) {
@@ -356,8 +378,8 @@
         '<path id="road-line" d="' + road + '" stroke="#f2c970" stroke-opacity="0.45" stroke-width="1" stroke-dasharray="4 7" fill="none"/>' +
 
         // ёлки за краями экрана (видны на широких экранах)
-        tree(-30, 548, 50) + tree(-52, 400, 46) + tree(-34, 250, 36) +
-        tree(394, 520, 48) + tree(412, 360, 42) + tree(392, 220, 34) +
+        tree(-30, 548, 50, 'shiny') + tree(-52, 400, 46) + tree(-34, 250, 36, 'shiny') +
+        tree(394, 520, 48) + tree(412, 360, 42, 'shiny') + tree(392, 220, 34) +
         tree(-40, 305, 26) + tree(-44, 480, 30) + tree(-70, 340, 32) + tree(416, 292, 28) + tree(418, 468, 30) + tree(440, 400, 34) +
         // ёлки по углам карты
         tree(-32, 142, 18) + tree(-58, 168, 22) + tree(412, 176, 22) + tree(436, 150, 18) +

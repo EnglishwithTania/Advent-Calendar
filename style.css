@@ -270,6 +270,17 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--lamp); outl
 @keyframes flap { to { transform: scaleY(-0.6); } }
 .fun-tree.rustle { animation: tree-shake 0.5s ease-in-out 1; }
 .garl { opacity: 0; animation: garl-in 0.3s ease 1 both, garl-blink 0.5s ease-in-out infinite alternate; }
+/* огоньки на больших ёлках мигают и в режиме «уменьшить движение»: это декор */
+.tl { transform-box: fill-box; transform-origin: center; animation: tl-blink 1.2s ease-in-out infinite; }
+.tl.t1 { animation-delay: -0.4s; }
+.tl.t2 { animation-delay: -0.8s; }
+@keyframes tl-blink { 0%, 100% { opacity: 0.2; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1.4); } }
+.tl-glow { transform-box: fill-box; transform-origin: center; opacity: 0.2; animation: tl-glow 1.4s ease-in-out infinite; }
+.tl-spark { transform-box: fill-box; transform-origin: center; opacity: 0; animation: tl-spark 1.4s ease-in-out infinite; }
+.tl-glow.t1, .tl-spark.t1 { animation-delay: -0.45s; }
+.tl-glow.t2, .tl-spark.t2 { animation-delay: -0.9s; }
+@keyframes tl-glow { 0%, 100% { opacity: 0.15; transform: scale(0.7); } 50% { opacity: 0.8; transform: scale(1.5); } }
+@keyframes tl-spark { 0%, 100% { opacity: 0; transform: scale(0.2) rotate(0deg); } 50% { opacity: 1; transform: scale(1) rotate(45deg); } }
 @keyframes garl-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes garl-blink { from { opacity: 1; } to { opacity: 0.35; } }
 .garl-star { transform-box: fill-box; transform-origin: center; animation: star-pop 0.6s cubic-bezier(.2, 1.8, .4, 1) 1.1s 1 both; }
@@ -285,7 +296,7 @@ button:focus-visible, input:focus-visible { outline: 2px solid var(--lamp); outl
 .peek > g { animation: peek 2.4s ease-in-out 1 both; }
 @keyframes peek { 0% { transform: translateX(0); opacity: 0; } 20% { opacity: 1; } 30%, 70% { transform: translateX(var(--dx)); opacity: 1; } 95% { transform: translateX(0); opacity: 1; } 100% { transform: translateX(0); opacity: 0; } }
 .fun-tree.disco { animation: elf-dance 0.3s ease-in-out 8 alternate; }
-.fun-tree.disco .bulb { animation: garl-blink 0.12s steps(2) infinite; }
+.fun-tree.disco .tl { animation: garl-blink 0.12s steps(2) infinite; }
 
 /* ---------- нижние вкладки ---------- */
 .tabs {
